@@ -12,8 +12,8 @@
 
 <body>
     <?php
-    include_once "comps/navbar.php";
-  ?>
+        include_once "comps/navbar.php";
+    ?>
     <main>
         <section class="slides-container">
             <div class="slide fade">
@@ -78,7 +78,7 @@
         </section>
     </main>
     <?php
-      include_once "comps/footer.php";
+        include_once "comps/footer.php";
     ?>
     <script src="js/menu.js"></script>
     <script src="js/slider.js"></script>

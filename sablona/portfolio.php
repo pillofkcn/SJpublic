@@ -14,8 +14,8 @@
 
 <body>
     <?php
-            include_once "comps/navbar.php";
-        ?>
+        include_once "comps/navbar.php";
+    ?>
 
     <main>
         <section class="banner">

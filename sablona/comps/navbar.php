@@ -1,10 +1,10 @@
 <header class="container main-header">
-        <div>
-          <a href="index.php">
+    <div>
+        <a href="index.php">
             <img src="img/logo.png" height="40">
-          </a>
-        </div>
-      <nav class="main-nav">
+        </a>
+    </div>
+    <nav class="main-nav">
         <ul class="main-menu" id="main-menu">
             <li><a href="index.php">Domov</a></li>
             <li><a href="portfolio.php">Portfólio</a></li>
@@ -14,5 +14,5 @@
         <a class="hamburger" id="hamburger">
             <i class="fa fa-bars"></i>
         </a>
-      </nav>
+    </nav>
 </header>
