@@ -1,7 +1,7 @@
 <header class="container main-header">
     <div>
         <a href="index.php">
-            <img src="img/logo.png" height="40">
+            <img src="img/logo.png" height="90">
         </a>
     </div>
     <nav class="main-nav">
