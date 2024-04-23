@@ -7,6 +7,7 @@
     <nav class="main-nav">
         <ul class="main-menu" id="main-menu">
             <li><a href="index.php">Domov</a></li>
+            <li><a href="reservations.php">Kalendár</a></li>
             <li><a href="jedalnicek.php">Jedálničky</a></li>
             <li><a href="treningovy_plan.php">Tréningové plány</a></li>
             <li><a href="qna.php">Q&A</a></li>
