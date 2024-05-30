@@ -67,18 +67,28 @@ header {
     max-width: 100%;
 }
 
+.main-menu {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
 .main-menu li {
-    display: inline;
     margin-left: 20px;
 }
 
 .main-menu li a {
     text-decoration: none;
     color: black;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
 }
 
-.main-menu li:hover a {
-    text-decoration: underline;
+.main-menu li a:hover {
+    background-color: #007BFF;
+    color: white;
 }
 
 .hamburger {

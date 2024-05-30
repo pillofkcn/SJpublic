@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <header class="container main-header">
     <div>
         <a href="index.php">
@@ -12,6 +15,13 @@
             <li><a href="treningovy_plan.php">Tréningové plány</a></li>
             <li><a href="qna.php">Q&A</a></li>
             <li><a href="kontakt.php">Kontakt</a></li>
+            <?php if (isset($_SESSION['user'])): ?>
+                <li>Welcome, <?php echo htmlspecialchars($_SESSION['user']['username']); ?></li>
+                <li><a href="auth.php?action=logout">Logout</a></li>
+            <?php else: ?>
+                <li><a href="auth.php">Login</a></li>
+                <li><a href="auth.php">Registrácia</a></li>
+            <?php endif; ?>
         </ul>
         <a class="hamburger" id="hamburger">
             <i class="fa fa-bars"></i>
