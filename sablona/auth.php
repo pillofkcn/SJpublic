@@ -1,42 +1,26 @@
 <?php
 session_start();
+require_once 'AuthClass.php';
 
-// Database connection using PDO
-function getPDO() {
-    $host = '127.0.0.1';
-    $db = 'sj';
-    $user = 'root';
-    $pass = '';
-    $charset = 'utf8mb4';
+$auth = new Auth();
 
-    $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-    $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-    ];
-
-    try {
-        $pdo = new PDO($dsn, $user, $pass, $options);
-    } catch (\PDOException $e) {
-        throw new \PDOException($e->getMessage(), (int)$e->getCode());
-    }
-
-    return $pdo;
+// Handle logout
+if (isset($_GET['action']) && $_GET['action'] == 'logout') {
+    session_unset();
+    session_destroy();
+    header('Location: index.php');
+    exit();
 }
 
 // Handle CRUD operations and login
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $pdo = getPDO();
     
     // Login
     if (isset($_POST['login'])) {
         $username = $_POST['username'];
         $password = $_POST['password'];
-        $stmt = $pdo->prepare("SELECT * FROM table_auth WHERE username = ?");
-        $stmt->execute([$username]);
-        $user = $stmt->fetch();
-        if ($user && password_verify($password, $user['password'])) {
+        $user = $auth->login($username, $password);
+        if ($user) {
             $_SESSION['user'] = $user;
             header('Location: index.php');
             exit;
@@ -49,9 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['register'])) {
         $username = $_POST['username'];
         $email = $_POST['email'];
-        $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
-        $stmt = $pdo->prepare("INSERT INTO table_auth (username, email, password) VALUES (?, ?, ?)");
-        $stmt->execute([$username, $email, $password]);
+        $password = $_POST['password'];
+        $auth->register($username, $email, $password);
     }
 
     // Update
@@ -59,23 +42,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $id = $_POST['id'];
         $username = $_POST['username'];
         $email = $_POST['email'];
-        $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
-        $stmt = $pdo->prepare("UPDATE table_auth SET username = ?, email = ?, password = ? WHERE id = ?");
-        $stmt->execute([$username, $email, $password, $id]);
+        $password = $_POST['password'];
+        $auth->update($id, $username, $email, $password);
     }
 
     // Delete
     if (isset($_POST['delete'])) {
         $id = $_POST['id'];
-        $stmt = $pdo->prepare("DELETE FROM table_auth WHERE id = ?");
-        $stmt->execute([$id]);
+        $auth->delete($id);
     }
 }
 
 // Fetch users
-$pdo = getPDO();
-$stmt = $pdo->query("SELECT * FROM table_auth");
-$users = $stmt->fetchAll();
+$users = $auth->getUsers();
 ?>
 
 <!DOCTYPE html>
@@ -88,47 +67,11 @@ $users = $stmt->fetchAll();
     <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
-    <header class="container main-header">
-        <div>
-            <a href="index.php">
-                <img src="img/logo.png" height="90">
-            </a>
-        </div>
-        <nav class="main-nav">
-            <ul class="main-menu" id="main-menu">
-                <li><a href="index.php">Domov</a></li>
-                <li><a href="reservations.php">Kalendár</a></li>
-                <li><a href="jedalnicek.php">Jedálničky</a></li>
-                <li><a href="treningovy_plan.php">Tréningové plány</a></li>
-                <li><a href="qna.php">Q&A</a></li>
-                <li><a href="kontakt.php">Kontakt</a></li>
-                <?php if (isset($_SESSION['user'])): ?>
-                    <li>Welcome, <?php echo htmlspecialchars($_SESSION['user']['username']); ?></li>
-                    <li><a href="?logout=true">Logout</a></li>
-                <?php else: ?>
-                    <li><a href="auth.php">Login</a></li>
-                    <li><a href="auth.php">Registrácia</a></li>
-                <?php endif; ?>
-            </ul>
-            <a class="hamburger" id="hamburger">
-                <i class="fa fa-bars"></i>
-            </a>
-        </nav>
-    </header>
-
-    <?php
-    // Handle logout
-    if (isset($_GET['logout'])) {
-        session_unset();
-        session_destroy();
-        header('Location: index.php');
-        exit;
-    }
-    ?>
+    <?php include_once "comps/navbar.php"; ?>
 
     <div class="form-container">
         <form action="" method="post">
-            <h2>Login</h2>
+            <h3>Login</h3>
             <label for="username">Username:</label>
             <input type="text" id="username" name="username" required>
             <label for="password">Password:</label>
@@ -137,7 +80,7 @@ $users = $stmt->fetchAll();
         </form>
 
         <form action="" method="post">
-            <h2>Register</h2>
+            <h3>Register</h3>
             <label for="username">Username:</label>
             <input type="text" id="username" name="username" required>
             <label for="email">Email:</label>
@@ -148,9 +91,11 @@ $users = $stmt->fetchAll();
         </form>
     </div>
 
-    <h2>Users</h2>
     <div class="user-table">
-        <table>
+        <h3>Admin Panel</h3>
+    </div>
+    <div class="user-table">
+        <table class="center-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -183,5 +128,6 @@ $users = $stmt->fetchAll();
             </tbody>
         </table>
     </div>
+    <?php include_once "comps/footer.php"; ?>
 </body>
 </html>

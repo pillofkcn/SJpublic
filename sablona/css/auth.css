@@ -1,7 +1,9 @@
 .form-container {
     display: flex;
     justify-content: space-around;
-    margin: 50px auto;
+    align-items: center; /* Added for vertical centering */
+    height: 60vh; /* Make the container take full viewport height */
+    margin: 0 auto; /* Adjusted for vertical centering */
     max-width: 800px;
 }
 
@@ -15,6 +17,16 @@
 
 .form-container form h2 {
     margin-bottom: 20px;
+}
+
+.user-table {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.center-table {
+    margin: 0 auto;
 }
 
 .form-container form input[type="text"],
