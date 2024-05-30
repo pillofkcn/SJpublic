@@ -2,7 +2,7 @@
 session_start();
 require_once 'AuthClass.php';
 
-$auth = new Auth();
+$auth = new AuthClass();
 
 // Handle logout
 if (isset($_GET['action']) && $_GET['action'] == 'logout') {
@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $user = $auth->login($username, $password);
         if ($user) {
             $_SESSION['user'] = $user;
-            header('Location: index.php');
+            header('Location: auth.php');
             exit;
         } else {
             echo "Invalid login credentials.";
@@ -54,7 +54,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 // Fetch users
-$users = $auth->getUsers();
+if (isset($_SESSION['user']) && $_SESSION['user']['is_admin'] == 1) {
+    $users = $auth->getUsers(); // Admins see all users
+} else if (isset($_SESSION['user'])) {
+    $users = [$auth->getUserById($_SESSION['user']['id'])]; // Registered users see only their own info
+} else {
+    $users = [];
+}
 ?>
 
 <!DOCTYPE html>
@@ -91,43 +97,48 @@ $users = $auth->getUsers();
         </form>
     </div>
 
-    <div class="user-table">
-        <h3>Admin Panel</h3>
-    </div>
-    <div class="user-table">
-        <table class="center-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($users as $user): ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($user['id']); ?></td>
-                    <td><?php echo htmlspecialchars($user['username']); ?></td>
-                    <td><?php echo htmlspecialchars($user['email']); ?></td>
-                    <td>
-                        <form action="" method="post" style="display:inline-block;">
-                            <input type="hidden" name="id" value="<?php echo $user['id']; ?>">
-                            <input type="text" name="username" value="<?php echo htmlspecialchars($user['username']); ?>" required>
-                            <input type="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
-                            <input type="password" name="password" placeholder="New password">
-                            <input type="submit" name="update" value="Update">
-                        </form>
-                        <form action="" method="post" style="display:inline-block;">
-                            <input type="hidden" name="id" value="<?php echo $user['id']; ?>">
-                            <input type="submit" name="delete" value="Delete" onclick="return confirm('Are you sure?')">
-                        </form>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
+    <?php if (isset($_SESSION['user'])): ?>
+        <div class="user-table">
+            <h3><?php echo $_SESSION['user']['is_admin'] == 1 ? 'Admin Panel' : 'User Panel'; ?></h3>
+        </div>
+        <div class="user-table">
+            <table class="center-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($users as $user): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($user['id']); ?></td>
+                        <td><?php echo htmlspecialchars($user['username']); ?></td>
+                        <td><?php echo htmlspecialchars($user['email']); ?></td>
+                        <td>
+                            <form action="" method="post" style="display:inline-block;">
+                                <input type="hidden" name="id" value="<?php echo $user['id']; ?>">
+                                <input type="text" name="username" value="<?php echo htmlspecialchars($user['username']); ?>" required>
+                                <input type="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                                <input type="password" name="password" placeholder="New password">
+                                <input type="submit" name="update" value="Update">
+                            </form>
+                            <form action="" method="post" style="display:inline-block;">
+                                <input type="hidden" name="id" value="<?php echo $user['id']; ?>">
+                                <?php if ($_SESSION['user']['is_admin'] == 1 || $_SESSION['user']['id'] == $user['id']): ?>
+                                    <input type="submit" name="delete" value="Delete" onclick="return confirm('Are you sure?')">
+                                <?php endif; ?>
+                            </form>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+
     <?php include_once "comps/footer.php"; ?>
 </body>
 </html>
