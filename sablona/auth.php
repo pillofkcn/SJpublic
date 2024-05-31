@@ -14,7 +14,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'logout') {
 
 // Handle CRUD operations and login
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    
     // Login
     if (isset($_POST['login'])) {
         $username = $_POST['username'];
@@ -76,33 +75,26 @@ if (isset($_SESSION['user']) && $_SESSION['user']['is_admin'] == 1) {
     <?php include_once "comps/navbar.php"; ?>
 
     <div class="form-container">
+        <!-- Forms for login, registration, and CRUD operations -->
         <form action="" method="post">
-            <h3>Login</h3>
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" required>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
+            <h2>Login</h2>
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
             <input type="submit" name="login" value="Login">
         </form>
-
         <form action="" method="post">
-            <h3>Register</h3>
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" required>
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
+            <h2>Register</h2>
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Password" required>
             <input type="submit" name="register" value="Register">
         </form>
     </div>
 
-    <?php if (isset($_SESSION['user'])): ?>
-        <div class="user-table">
+    <?php if (!empty($users)): ?>
+        <div class="user-panel">
             <h3><?php echo $_SESSION['user']['is_admin'] == 1 ? 'Admin Panel' : 'User Panel'; ?></h3>
-        </div>
-        <div class="user-table">
-            <table class="center-table">
+            <table class="user-table">
                 <thead>
                     <tr>
                         <th>ID</th>

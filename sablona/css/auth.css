@@ -20,13 +20,86 @@
 }
 
 .user-table {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
+    width: 80%;
+    margin: 20px auto;
+    border-collapse: collapse;
 }
 
-.center-table {
-    margin: 0 auto;
+.user-table th, .user-table td {
+    border: 1px solid black;
+    padding: 10px;
+    text-align: left;
+}
+
+.user-table th {
+    background-color: #f2f2f2;
+}
+
+.form-container form input[type="text"],
+.form-container form input[type="password"],
+.form-container form input[type="email"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.form-container form input[type="submit"] {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007BFF;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.form-container form input[type="submit"]:hover {
+    background-color: #0056b3;
+}
+.form-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center; /* Added for vertical centering */
+    height: 60vh; /* Make the container take full viewport height */
+    margin: 0 auto; /* Adjusted for vertical centering */
+    max-width: 800px;
+}
+
+.form-container form {
+    width: 45%;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-container form h2 {
+    margin-bottom: 20px;
+}
+
+.user-table {
+    width: 80%;
+    margin: 20px auto;
+    border-collapse: collapse;
+}
+
+.user-table th, .user-table td {
+    border: 1px solid black;
+    padding: 10px;
+    text-align: left;
+}
+
+.user-table th {
+    background-color: #f2f2f2;
+}
+
+.user-panel {
+    text-align: center; /* Center the text in the panel */
+    margin: 20px auto; /* Center the panel horizontally */
+    width: 80%; /* Adjust width as needed */
 }
 
 .form-container form input[type="text"],

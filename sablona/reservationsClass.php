@@ -30,6 +30,12 @@ class ReservationsClass {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getReservationById($id) {
+        $stmt = $this->pdo->prepare("SELECT * FROM table_reservations WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function updateReservation($id, $date) {
         $stmt = $this->pdo->prepare("UPDATE table_reservations SET date = ? WHERE id = ?");
         return $stmt->execute([$date, $id]);
