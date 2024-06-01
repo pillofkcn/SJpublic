@@ -1,7 +1,7 @@
 <?php
 require_once 'Db.php';
 
-class AuthClass extends Db {
+class Auth extends Db {
     public function __construct() {
         parent::__construct();
     }

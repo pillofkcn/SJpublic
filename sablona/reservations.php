@@ -5,14 +5,11 @@ require_once 'classes/Auth.php';
 require_once 'classes/Reservations.php';
 
 // Initialize authentication and reservation objects
-$auth = new AuthClass();
-$reservationsClass = new ReservationsClass();
+$auth = new Auth();
+$reservationsClass = new Reservations();
 
-// Redirect to login page if user is not logged in
-if (!isset($_SESSION['user'])) {
-    header('Location: login.php');
-    exit();
-}
+// Check if the user is logged in
+$isLoggedIn = isset($_SESSION['user']);
 
 // Set the current month if it's not already set in the session
 if (!isset($_SESSION['month'])) {
@@ -28,8 +25,8 @@ if (isset($_GET['action'])) {
     }
 }
 
-// Handle reservation request
-if (isset($_GET['date']) && isset($_GET['reserve']) && $_GET['reserve'] == 1) {
+// Handle reservation request if user is logged in
+if ($isLoggedIn && isset($_GET['date']) && isset($_GET['reserve']) && $_GET['reserve'] == 1) {
     $date = $_GET['date'];
     $userId = $_SESSION['user']['id'];
     $reservationsClass->addReservation($userId, $date);
@@ -37,22 +34,16 @@ if (isset($_GET['date']) && isset($_GET['reserve']) && $_GET['reserve'] == 1) {
     exit();
 }
 
-// Handle form submissions for updating and deleting reservations
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+// Handle form submissions for updating and deleting reservations if user is logged in
+if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['updateReservation'])) {
         $reservationId = $_POST['id'];
         $newDate = $_POST['date'];
-        $reservation = $reservationsClass->getReservationById($reservationId);
-        if ($_SESSION['user']['is_admin'] == 1 || $reservation['user_id'] == $_SESSION['user']['id']) {
-            $reservationsClass->updateReservation($reservationId, $newDate);
-        }
+        $reservationsClass->updateReservation($reservationId, $newDate);
     }
     if (isset($_POST['deleteReservation'])) {
         $reservationId = $_POST['id'];
-        $reservation = $reservationsClass->getReservationById($reservationId);
-        if ($_SESSION['user']['is_admin'] == 1 || $reservation['user_id'] == $_SESSION['user']['id']) {
-            $reservationsClass->deleteReservation($reservationId);
-        }
+        $reservationsClass->deleteReservation($reservationId);
     }
 }
 
@@ -75,7 +66,7 @@ $monthNames = [
 $reservations = $reservationsClass->getReservations();
 
 // Function to render the calendar
-function renderCalendar($daysInMonth, $firstDayOfMonth, $reservations, $month, $year) {
+function renderCalendar($daysInMonth, $firstDayOfMonth, $reservations, $month, $year, $isLoggedIn) {
     $calendar = '<tr>';
     // Add empty cells before the first day of the month
     for ($i = 0; $i < $firstDayOfMonth; $i++) {
@@ -93,7 +84,13 @@ function renderCalendar($daysInMonth, $firstDayOfMonth, $reservations, $month, $
         }
         // Set background color based on reservation status
         $bgColor = $isReserved ? 'red' : 'green';
-        $calendar .= "<td style='background-color: $bgColor;'><a href='?date=$date&reserve=1' style='color: white; display: grid; width: 100%; height: 100%;'>$day</a></td>";
+        $calendar .= "<td style='background-color: $bgColor;'>";
+        if ($isLoggedIn) {
+            $calendar .= "<a href='?date=$date&reserve=1' style='color: white; display: block; width: 100%; height: 100%;'>$day</a>";
+        } else {
+            $calendar .= "<span style='color: white; display: block; width: 100%; height: 100%;'>$day</span>";
+        }
+        $calendar .= "</td>";
         // Add a new row at the end of the week
         if (($firstDayOfMonth + $day) % 7 == 0) {
             $calendar .= '</tr><tr>';
@@ -111,7 +108,6 @@ function renderCalendar($daysInMonth, $firstDayOfMonth, $reservations, $month, $
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -119,15 +115,14 @@ function renderCalendar($daysInMonth, $firstDayOfMonth, $reservations, $month, $
     <link rel="stylesheet" href="css/reservations.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
     <?php include_once "comps/navbar.php"; ?>
 
     <div class="calendar-container">
         <div class="navigation">
-            <a href="?action=prev"><</a>
+            <a href="?action=prev">&#60;</a>
             <h2><?php echo $monthNames[$month] . " " . $year; ?></h2>
-            <a href="?action=next">></a>
+            <a href="?action=next">&#62;</a>
         </div>
         <div class="calendar-wrapper">
             <table class="calendar">
@@ -143,51 +138,52 @@ function renderCalendar($daysInMonth, $firstDayOfMonth, $reservations, $month, $
                     </tr>
                 </thead>
                 <tbody>
-                    <?php echo renderCalendar($daysInMonth, $firstDayOfMonth, $reservations, $month, $year); ?>
+                    <?php echo renderCalendar($daysInMonth, $firstDayOfMonth, $reservations, $month, $year, $isLoggedIn); ?>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <div class="user-panel">
-        <h3><?php echo $_SESSION['user']['is_admin'] == 1 ? 'Admin Panel' : 'User Panel'; ?></h3>
-        <table class="user-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Date</th>
-                    <th>Username</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($reservations as $reservation) :
-                    $user = $auth->getUserById($reservation['user_id']);
-                ?>
+    <?php if ($isLoggedIn): ?>
+        <div class="user-panel">
+            <h3><?php echo $_SESSION['user']['is_admin'] == 1 ? 'Admin Panel' : 'User Panel'; ?></h3>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Username</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($reservations as $reservation): 
+                        $user = $auth->getUserById($reservation['user_id']);
+                    ?>
                     <tr>
                         <td><?php echo htmlspecialchars($reservation['id']); ?></td>
                         <td><?php echo htmlspecialchars($reservation['date']); ?></td>
                         <td><?php echo htmlspecialchars($user['username']); ?></td>
                         <td>
-                            <?php if ($_SESSION['user']['is_admin'] == 1 || $reservation['user_id'] == $_SESSION['user']['id']) : ?>
-                                <form action="" method="post" style="display:inline-block;">
-                                    <input type="hidden" name="id" value="<?php echo $reservation['id']; ?>">
-                                    <input type="date" name="date" value="<?php echo htmlspecialchars($reservation['date']); ?>" required>
-                                    <input type="submit" name="updateReservation" value="Update">
-                                </form>
-                                <form action="" method="post" style="display:inline-block;">
-                                    <input type="hidden" name="id" value="<?php echo $reservation['id']; ?>">
-                                    <input type="submit" name="deleteReservation" value="Delete" onclick="return confirm('Are you sure?')">
-                                </form>
+                            <?php if ($isLoggedIn && ($_SESSION['user']['is_admin'] == 1 || $reservation['user_id'] == $_SESSION['user']['id'])): ?>
+                            <form action="" method="post" style="display:inline-block;">
+                                <input type="hidden" name="id" value="<?php echo $reservation['id']; ?>">
+                                <input type="date" name="date" value="<?php echo htmlspecialchars($reservation['date']); ?>" required>
+                                <input type="submit" name="updateReservation" value="Update">
+                            </form>
+                            <form action="" method="post" style="display:inline-block;">
+                                <input type="hidden" name="id" value="<?php echo $reservation['id']; ?>">
+                                <input type="submit" name="deleteReservation" value="Delete" onclick="return confirm('Are you sure?')">
+                            </form>
                             <?php endif; ?>
                         </td>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
 
     <?php include_once "comps/footer.php"; ?>
 </body>
-
 </html>

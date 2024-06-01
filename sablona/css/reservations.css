@@ -24,6 +24,7 @@
     text-align: center;
     vertical-align: middle; /* Vertically center the content */
     width: 60px;
+    background-color: white;
 }
 
 .navigation {
@@ -31,13 +32,14 @@
     justify-content: center;
     align-items: center;
     margin-bottom: 10px;
+    padding-top: 30px;
 }
 
 .navigation a {
     padding: 10px;
-    margin: 0 10px;
+    margin: 0 50px;
     text-decoration: none;
-    background-color: #007BFF;
+    background-color: #000000;
     color: white;
     border-radius: 5px;
 }
@@ -73,6 +75,7 @@
     border: 1px solid black;
     padding: 10px;
     text-align: left;
+    background-color: white;
 }
 
 .user-table th {

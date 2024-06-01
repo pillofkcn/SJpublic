@@ -5,6 +5,7 @@
 
 body {
     font-family: Verdana, Geneva, Tahoma, sans-serif;
+    background-color: #bdbdbd;
 }
 
 /*ŠTÝLY PRE FONTY*/
@@ -91,7 +92,7 @@ header {
 }
 
 .main-menu li a:hover {
-    background-color: #007BFF;
+    background-color: #000000;
     color: white;
 }
 

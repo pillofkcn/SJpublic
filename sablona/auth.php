@@ -2,7 +2,8 @@
 session_start();
 require_once 'classes/Auth.php';
 
-$auth = new AuthClass();
+$auth = new Auth();
+$error = '';
 
 // Handle logout
 if (isset($_GET['action']) && $_GET['action'] == 'logout') {
@@ -24,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             header('Location: auth.php');
             exit;
         } else {
-            echo "Invalid login credentials.";
+            $error = "Invalid login credentials.";
         }
     }
     
@@ -33,7 +34,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $username = $_POST['username'];
         $email = $_POST['email'];
         $password = $_POST['password'];
-        $auth->register($username, $email, $password);
+        $confirmPassword = $_POST['confirm_password'];
+        $terms = isset($_POST['terms']);
+
+        if ($password !== $confirmPassword) {
+            $error = "Passwords do not match.";
+        } elseif (!$terms) {
+            $error = "You must agree to the terms.";
+        } else {
+            $auth->register($username, $email, $password);
+        }
     }
 
     // Update
@@ -70,24 +80,38 @@ if (isset($_SESSION['user']) && $_SESSION['user']['is_admin'] == 1) {
     <title>CRUD Application</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
+    <script src="js/auth.js"></script>
 </head>
 <body>
     <?php include_once "comps/navbar.php"; ?>
 
+    <?php if ($error): ?>
+        <div class="error-container">
+            <div class="error">
+                <p><?php echo htmlspecialchars($error); ?></p>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <div class="form-container">
         <!-- Forms for login, registration, and CRUD operations -->
         <form action="" method="post">
-            <h2>Login</h2>
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <input type="submit" name="login" value="Login">
+            <h2>Prihlásenie</h2>
+            <input type="text" name="username" placeholder="Prezývka" required>
+            <input type="password" name="password" placeholder="Heslo" required>
+            <input type="submit" name="login" value="Prihlás ma">
         </form>
-        <form action="" method="post">
-            <h2>Register</h2>
-            <input type="text" name="username" placeholder="Username" required>
+        <form action="" method="post" onsubmit="return validatePassword()">
+            <h2>Registrácia</h2>
+            <input type="text" name="username" placeholder="Prezývka" required>
             <input type="email" name="email" placeholder="Email" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <input type="submit" name="register" value="Register">
+            <input type="password" name="password" id="password" placeholder="Heslo" required>
+            <input type="password" name="confirm_password" id="confirm_password" placeholder="Heslo znovu" required>
+            <label>
+                <input type="checkbox" name="terms" required>
+                Súhlasím s podmienkami.
+            </label>
+            <input type="submit" name="register" value="Registruj ma">
         </form>
     </div>
 

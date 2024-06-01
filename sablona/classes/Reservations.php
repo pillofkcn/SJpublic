@@ -1,7 +1,7 @@
 <?php
 require_once 'Db.php';
 
-class ReservationsClass extends Db {
+class Reservations extends Db {
     public function __construct() {
         parent::__construct();
     }

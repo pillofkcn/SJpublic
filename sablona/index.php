@@ -19,18 +19,18 @@
     <main>
         <section class="slides-container">
             <div class="slide fade">
-                <img src="img/banner1.jpg" />
-                <div class="slide-text">Prvý nadpis</div>
+                <img src="img/banner2.jpg" />
+                <div class="slide-text">Pomôžeme začať,</div>
             </div>
 
             <div class="slide fade">
-                <img src="img/banner2.jpg" />
-                <div class="slide-text">Druhý nadpis</div>
+                <img src="img/banner1.jpg" />
+                <div class="slide-text">Nastaviť,</div>
             </div>
 
             <div class="slide fade">
                 <img src="img/banner3.jpg" />
-                <div class="slide-text">Tretí nadpis</div>
+                <div class="slide-text">Udržať.</div>
             </div>
 
             <a id="prev" class="prev">❮</a>
