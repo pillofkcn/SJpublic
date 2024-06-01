@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'AuthClass.php';
+require_once 'classes/Auth.php';
 
 $auth = new AuthClass();
 
