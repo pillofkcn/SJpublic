@@ -51,7 +51,7 @@ body {
 .training-form form button {
     padding: 10px;
     border: none;
-    background-color: #28a745;
+    background-color: #000000;
     color: white;
     cursor: pointer;
     border-radius: 5px;
@@ -59,7 +59,7 @@ body {
 }
 
 .training-form form button:hover {
-    background-color: #218838;
+    background-color: #000000;
 }
 
 .carousel-container {

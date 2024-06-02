@@ -64,7 +64,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // delete
     if (isset($_POST['delete'])) {
         $id = $_POST['id'];
-        $auth->delete($id);
+        // kontrola, ci je uzivatel admin alebo sa pokusa zmazat svoj vlastny ucet
+        if ($_SESSION['user']['is_admin'] == 1 || $_SESSION['user']['id'] == $id) {
+            try {
+                $auth->delete($id);
+                // ak sa uzivatel smaze sam, odhlasi sa
+                if ($_SESSION['user']['id'] == $id) {
+                    session_unset();
+                    session_destroy();
+                    header('Location: index.php');
+                    exit();
+                } else {
+                    header('Location: auth.php');
+                    exit();
+                }
+            } catch (PDOException $e) {
+                $error = "Error deleting user: " . $e->getMessage();
+            }
+        } else {
+            $error = "You are not authorized to delete this user.";
+        }
     }
 }
 
@@ -125,7 +144,6 @@ if (isset($_SESSION['user']) && $_SESSION['user']['is_admin'] == 1) {
         </form>
     </div>
 
-    
     <?php if (!empty($users)): ?>
         <div class="user-panel">
             <!-- ak je prihlaseny admin, vidi admin panel, ak nie, user panel -->
@@ -140,7 +158,7 @@ if (isset($_SESSION['user']) && $_SESSION['user']['is_admin'] == 1) {
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- iteracia nad ubsahom &users, ak je prihlaseny admin, su tam vsetci, ak nie, len prihlaseny -->
+                    <!-- iteracia nad obsahom &users, ak je prihlaseny admin, su tam vsetci, ak nie, len prihlaseny -->
                     <?php foreach ($users as $user): ?>
                     <tr>
                         <td><?php echo htmlspecialchars($user['id']); ?></td>
