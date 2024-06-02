@@ -7,16 +7,19 @@ session_start();
 $auth = new Auth();
 $trainings = new Trainings();
 
-$limit = 4; // Number of trainings to show per page
+// pocet treningov na jeden page v showcase
+$limit = 4; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 
-// Check if user is logged in
+// overenie, ci je uzivatel  prihlaseny
 $userId = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 $username = isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : null;
+// overenie, ci je admin
 $isAdmin = $auth->isAdmin();
 
-// Handle form submissions
+// ak je user vlastnik treningu alebo admin
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && $userId) {
+    // moze zmazat trening
     if (isset($_POST['delete_training_id'])) {
         $trainingId = $_POST['delete_training_id'];
         if ($trainings->isOwnerOrAdmin($trainingId, $userId, $isAdmin)) {
@@ -26,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $userId) {
         } else {
             echo "You are not authorized to delete this training.";
         }
+    // moze updatnut trening
     } elseif (isset($_POST['training_id'])) {
         $trainingId = $_POST['training_id'];
         if ($trainings->isOwnerOrAdmin($trainingId, $userId, $isAdmin)) {
@@ -42,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $userId) {
         } else {
             echo "You are not authorized to update this training.";
         }
+    // moze vytvorit trening
     } else {
         $data = [
             'name' => $_POST['name'],
@@ -54,11 +59,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $userId) {
     }
 }
 
-// Fetch trainings for slideshow
+// ziskanie treningov a poctu stran do showcasu
 $trainingsList = $trainings->getTrainings($page);
 $totalPages = $trainings->getTotalPages();
 
 $editTraining = null;
+
+// ak user klikne na trening, ziska sa trening na zaklade id
 if (isset($_GET['edit_id'])) {
     $editTraining = $trainings->getTrainingById($_GET['edit_id']);
 }
@@ -77,14 +84,19 @@ if (isset($_GET['edit_id'])) {
     <div class="trainings-container">
 
         <div class="carousel-container">
+            <!-- ak je cislo page vacsie ako jedna, zobrazi sa prev button -->
             <?php if ($page > 1): ?>
                 <a href="?page=<?= $page - 1 ?>" class="carousel-button prev-button">&#10094;</a>
             <?php endif; ?>
             <div class="carousel">
+                <!-- vykreslenie showcasu treningov -->
                 <?php foreach ($trainingsList as $training): ?>
                     <div class="carousel-item">
+                        <!-- link na edit -->
                         <a href="?edit_id=<?= $training['id'] ?>&page=<?= $page ?>">
+                            <!-- obrazok -->
                             <img src="data:image/jpeg;base64,<?= base64_encode($training['image']) ?>" alt="<?= $training['name'] ?>">
+                            <!-- nazov treningu a meno autora -->
                             <div class="carousel-caption">
                                 <div class="training-name"><?= $training['name'] ?></div>
                                 <div class="author-name"><?= $training['author'] ?></div>
@@ -93,12 +105,16 @@ if (isset($_GET['edit_id'])) {
                     </div>
                 <?php endforeach; ?>
             </div>
+            <!-- ak je cislo page mensie ako pages dokopy, zobrazi sa next button -->
             <?php if ($page < $totalPages): ?>
+                
                 <a href="?page=<?= $page + 1 ?>" class="carousel-button next-button">&#10095;</a>
             <?php endif; ?>
         </div>
 
+        <!-- ak user klikne na trening -->
         <?php if ($editTraining): ?>
+            <!-- ak je prihlaseny user vlastnik treningu alebo admin, Aktualizacia -->
             <?php if ($userId && ($editTraining['user_id'] == $userId || $isAdmin)): ?>
                 <div class="training-form edit-form">
                     <h2>Aktualizázia Tréningu</h2>
@@ -117,6 +133,8 @@ if (isset($_GET['edit_id'])) {
                         <button type="submit" name="delete_training_id" value="<?= $editTraining['id'] ?>">Zmaž</button>
                     </form>
                 </div>
+
+            <!-- ak user nie je prihlaseny alebo je prihlaseny ale nie je vlastnikom treningu, Preview -->
             <?php else: ?>
                 <div class="training-form edit-form">
                     <h2>Prehľad Tréningu</h2>
@@ -133,6 +151,8 @@ if (isset($_GET['edit_id'])) {
                     </form>
                 </div>
             <?php endif; ?>
+
+        <!-- ak nan neklikne a je prihlaseny, ma moznost vytvorit trening -->
         <?php elseif ($userId): ?>
             <div class="training-form">
                 <h2>Vytvorenie Tréningu</h2>
