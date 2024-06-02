@@ -24,51 +24,70 @@ if ($userId) {
 }
 
 // Handle form submissions
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && $userId) {
     if (isset($_POST['delete_training_id'])) {
-        // Delete training
+        // Check if the user is the owner of the training or an admin
         $delete_training_id = $_POST['delete_training_id'];
-        $stmt = $pdo->prepare("DELETE FROM table_trainings WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT user_id FROM table_trainings WHERE id = ?");
         $stmt->bindParam(1, $delete_training_id);
         $stmt->execute();
-        header("Location: trainings.php?page=$page");
-        exit;
-    } else if (isset($_POST['training_id'])) {
-        // Update existing training
-        $training_id = $_POST['training_id'];
-        $name = $_POST['name'];
-        $equipment = $_POST['equipment'];
-        $length = $_POST['length'];
-        $instructions = $_POST['instructions'];
+        $training = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $image = null;
-        if (isset($_FILES['image']) && $_FILES['image']['error'] == UPLOAD_ERR_OK) {
-            $image = file_get_contents($_FILES['image']['tmp_name']);
-        }
-
-        if ($image) {
-            $stmt = $pdo->prepare("UPDATE table_trainings SET name = ?, equipment = ?, length = ?, instructions = ?, author = ?, image = ? WHERE id = ?");
-            $stmt->bindParam(1, $name);
-            $stmt->bindParam(2, $equipment);
-            $stmt->bindParam(3, $length);
-            $stmt->bindParam(4, $instructions);
-            $stmt->bindParam(5, $username); // Set author to the current username
-            $stmt->bindParam(6, $image, PDO::PARAM_LOB);
-            $stmt->bindParam(7, $training_id);
+        if ($training && ($training['user_id'] == $userId || $isAdmin)) {
+            $stmt = $pdo->prepare("DELETE FROM table_trainings WHERE id = ?");
+            $stmt->bindParam(1, $delete_training_id);
+            $stmt->execute();
+            header("Location: trainings.php?page=$page");
+            exit;
         } else {
-            $stmt = $pdo->prepare("UPDATE table_trainings SET name = ?, equipment = ?, length = ?, instructions = ?, author = ? WHERE id = ?");
-            $stmt->bindParam(1, $name);
-            $stmt->bindParam(2, $equipment);
-            $stmt->bindParam(3, $length);
-            $stmt->bindParam(4, $instructions);
-            $stmt->bindParam(5, $username); // Set author to the current username
-            $stmt->bindParam(6, $training_id);
+            echo "You are not authorized to delete this training.";
         }
-
+    } else if (isset($_POST['training_id'])) {
+        // Check if the user is the owner of the training or an admin
+        $training_id = $_POST['training_id'];
+        $stmt = $pdo->prepare("SELECT user_id FROM table_trainings WHERE id = ?");
+        $stmt->bindParam(1, $training_id);
         $stmt->execute();
-        header("Location: trainings.php?page=$page");
-        exit;
-    } else if ($userId) {
+        $training = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($training && ($training['user_id'] == $userId || $isAdmin)) {
+            // Update existing training
+            $name = $_POST['name'];
+            $equipment = $_POST['equipment'];
+            $length = $_POST['length'];
+            $instructions = $_POST['instructions'];
+
+            $image = null;
+            if (isset($_FILES['image']) && $_FILES['image']['error'] == UPLOAD_ERR_OK) {
+                $image = file_get_contents($_FILES['image']['tmp_name']);
+            }
+
+            if ($image) {
+                $stmt = $pdo->prepare("UPDATE table_trainings SET name = ?, equipment = ?, length = ?, instructions = ?, author = ?, image = ? WHERE id = ?");
+                $stmt->bindParam(1, $name);
+                $stmt->bindParam(2, $equipment);
+                $stmt->bindParam(3, $length);
+                $stmt->bindParam(4, $instructions);
+                $stmt->bindParam(5, $username); // Set author to the current username
+                $stmt->bindParam(6, $image, PDO::PARAM_LOB);
+                $stmt->bindParam(7, $training_id);
+            } else {
+                $stmt = $pdo->prepare("UPDATE table_trainings SET name = ?, equipment = ?, length = ?, instructions = ?, author = ? WHERE id = ?");
+                $stmt->bindParam(1, $name);
+                $stmt->bindParam(2, $equipment);
+                $stmt->bindParam(3, $length);
+                $stmt->bindParam(4, $instructions);
+                $stmt->bindParam(5, $username); // Set author to the current username
+                $stmt->bindParam(6, $training_id);
+            }
+
+            $stmt->execute();
+            header("Location: trainings.php?page=$page");
+            exit;
+        } else {
+            echo "You are not authorized to update this training.";
+        }
+    } else if (isset($_POST['name'])) {
         // Create new training
         $name = $_POST['name'];
         $equipment = $_POST['equipment'];
@@ -126,7 +145,7 @@ if (isset($_GET['edit_id'])) {
 
         <div class="carousel-container">
             <?php if ($page > 1): ?>
-                <a href="?page=<?= $page - 1 ?>" class="carousel-button prev-button"><</a>
+                <a href="?page=<?= $page - 1 ?>" class="carousel-button prev-button">&#10094;</a>
             <?php endif; ?>
             <div class="carousel">
                 <?php foreach ($trainings as $training): ?>
@@ -142,51 +161,62 @@ if (isset($_GET['edit_id'])) {
                 <?php endforeach; ?>
             </div>
             <?php if ($page < $totalPages): ?>
-                <a href="?page=<?= $page + 1 ?>" class="carousel-button next-button">></a>
+                <a href="?page=<?= $page + 1 ?>" class="carousel-button next-button">&#10095;</a>
             <?php endif; ?>
         </div>
 
-        <?php if ($userId): ?>
-            <?php if (!$editTraining): ?>
-                <div class="training-form">
-                    <h2>Create Training</h2>
-                    <form method="POST" enctype="multipart/form-data">
-                        <input type="text" name="name" placeholder="Training Name" required>
-                        <textarea name="equipment" placeholder="Equipment" required></textarea>
-                        <select name="length" required>
-                            <?php for ($i = 15; $i <= 120; $i += 15): ?>
-                                <option value="<?= $i ?>"><?= $i ?> minutes</option>
-                            <?php endfor; ?>
-                        </select>
-                        <textarea name="instructions" placeholder="Instructions" required></textarea>
-                        <input type="file" name="image">
-                        <button type="submit">Create Training</button>
-                    </form>
-                </div>
-            <?php endif; ?>
-            <?php if ($editTraining): ?>
+        <?php if ($editTraining): ?>
+            <?php if ($userId && ($editTraining['user_id'] == $userId || $isAdmin)): ?>
                 <div class="training-form edit-form">
-                    <h2>Update Training</h2>
+                    <h2>Aktualizázia Tréningu</h2>
                     <form method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="training_id" value="<?= $editTraining['id'] ?>">
-                        <input type="text" name="name" placeholder="Training Name" value="<?= $editTraining['name'] ?>" required>
-                        <textarea name="equipment" placeholder="Equipment" required><?= $editTraining['equipment'] ?></textarea>
+                        <input type="text" name="name" placeholder="Názov" value="<?= $editTraining['name'] ?>" required>
+                        <textarea name="equipment" placeholder="Potrebné vybavenie" required><?= $editTraining['equipment'] ?></textarea>
                         <select name="length" required>
                             <?php for ($i = 15; $i <= 120; $i += 15): ?>
-                                <option value="<?= $i ?>" <?= ($editTraining['length'] == $i) ? 'selected' : '' ?>><?= $i ?> minutes</option>
+                                <option value="<?= $i ?>" <?= ($editTraining['length'] == $i) ? 'selected' : '' ?>><?= $i ?> minút</option>
                             <?php endfor; ?>
                         </select>
-                        <textarea name="instructions" placeholder="Instructions" required><?= $editTraining['instructions'] ?></textarea>
+                        <textarea name="instructions" placeholder="Postup" required><?= $editTraining['instructions'] ?></textarea>
                         <input type="file" name="image">
-                        <button type="submit">Update Training</button>
-                        <button type="submit" name="delete_training_id" value="<?= $editTraining['id'] ?>">Delete Training</button>
+                        <button type="submit">Aktualizuj</button>
+                        <button type="submit" name="delete_training_id" value="<?= $editTraining['id'] ?>">Zmaž</button>
+                    </form>
+                </div>
+            <?php else: ?>
+                <div class="training-form edit-form">
+                    <h2>Prehľad Tréningu</h2>
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="training_id" value="<?= $editTraining['id'] ?>">
+                        <input type="text" name="name" placeholder="Názov" value="<?= $editTraining['name'] ?>" disabled>
+                        <textarea name="equipment" placeholder="Potrebné vybavenie" disabled><?= $editTraining['equipment'] ?></textarea>
+                        <select name="length" disabled>
+                            <?php for ($i = 15; $i <= 120; $i += 15): ?>
+                                <option value="<?= $i ?>" <?= ($editTraining['length'] == $i) ? 'selected' : '' ?>><?= $i ?> minút</option>
+                            <?php endfor; ?>
+                        </select>
+                        <textarea name="instructions" placeholder="Postup" disabled><?= $editTraining['instructions'] ?></textarea>
                     </form>
                 </div>
             <?php endif; ?>
-        <?php else: ?>
-            <p>You need to log in to manage trainings.</p>
+        <?php elseif ($userId): ?>
+            <div class="training-form">
+                <h2>Vytvorenie Tréningu</h2>
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="text" name="name" placeholder="Názov" required>
+                    <textarea name="equipment" placeholder="Vybavenie" required></textarea>
+                    <select name="length" required>
+                        <?php for ($i = 15; $i <= 120; $i += 15): ?>
+                            <option value="<?= $i ?>"><?= $i ?> minút</option>
+                        <?php endfor; ?>
+                    </select>
+                    <textarea name="instructions" placeholder="Postup" required></textarea>
+                    <input type="file" name="image">
+                    <button type="submit">Vytvoriť</button>
+                </form>
+            </div>
         <?php endif; ?>
-
     </div>
     <?php include_once "comps/footer.php"; ?>
 </body>
