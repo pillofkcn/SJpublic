@@ -1,8 +1,8 @@
 <?php
-// Start session and include necessary classes
-session_start();
 require_once 'classes/Auth.php';
 require_once 'classes/Reservations.php';
+
+session_start();
 
 // Initialize authentication and reservation objects
 $auth = new Auth();

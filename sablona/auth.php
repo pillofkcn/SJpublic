@@ -1,6 +1,7 @@
 <?php
-session_start();
 require_once 'classes/Auth.php';
+
+session_start();
 
 $auth = new Auth();
 $error = '';

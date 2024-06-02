@@ -48,5 +48,13 @@ class Auth extends Db {
         $stmt = $this->pdo->prepare("DELETE FROM table_auth WHERE id = ?");
         return $stmt->execute([$id]);
     }
+
+    public function isLoggedIn() {
+        return isset($_SESSION['user']);
+    }
+
+    public function isAdmin() {
+        return $this->isLoggedIn() && $_SESSION['user']['is_admin'];
+    }
 }
 ?>

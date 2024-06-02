@@ -1,133 +1,66 @@
 <?php
-require 'classes/Db.php';
 require 'classes/Auth.php';
-require 'classes/Reservations.php';
+require 'classes/Trainings.php';
 
 session_start();
-$db = new Db();
-$pdo = $db->getPdo();
+
+$auth = new Auth();
+$trainings = new Trainings();
 
 $limit = 4; // Number of trainings to show per page
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$offset = ($page - 1) * $limit;
 
 // Check if user is logged in
 $userId = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 $username = isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : null;
-
-$isAdmin = false;
-if ($userId) {
-    $stmt = $pdo->prepare("SELECT is_admin FROM table_auth WHERE id = ?");
-    $stmt->bindParam(1, $userId);
-    $stmt->execute();
-    $isAdmin = $stmt->fetchColumn();
-}
+$isAdmin = $auth->isAdmin();
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && $userId) {
     if (isset($_POST['delete_training_id'])) {
-        // Check if the user is the owner of the training or an admin
-        $delete_training_id = $_POST['delete_training_id'];
-        $stmt = $pdo->prepare("SELECT user_id FROM table_trainings WHERE id = ?");
-        $stmt->bindParam(1, $delete_training_id);
-        $stmt->execute();
-        $training = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($training && ($training['user_id'] == $userId || $isAdmin)) {
-            $stmt = $pdo->prepare("DELETE FROM table_trainings WHERE id = ?");
-            $stmt->bindParam(1, $delete_training_id);
-            $stmt->execute();
+        $trainingId = $_POST['delete_training_id'];
+        if ($trainings->isOwnerOrAdmin($trainingId, $userId, $isAdmin)) {
+            $trainings->deleteTraining($trainingId);
             header("Location: trainings.php?page=$page");
             exit;
         } else {
             echo "You are not authorized to delete this training.";
         }
-    } else if (isset($_POST['training_id'])) {
-        // Check if the user is the owner of the training or an admin
-        $training_id = $_POST['training_id'];
-        $stmt = $pdo->prepare("SELECT user_id FROM table_trainings WHERE id = ?");
-        $stmt->bindParam(1, $training_id);
-        $stmt->execute();
-        $training = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($training && ($training['user_id'] == $userId || $isAdmin)) {
-            // Update existing training
-            $name = $_POST['name'];
-            $equipment = $_POST['equipment'];
-            $length = $_POST['length'];
-            $instructions = $_POST['instructions'];
-
-            $image = null;
-            if (isset($_FILES['image']) && $_FILES['image']['error'] == UPLOAD_ERR_OK) {
-                $image = file_get_contents($_FILES['image']['tmp_name']);
-            }
-
-            if ($image) {
-                $stmt = $pdo->prepare("UPDATE table_trainings SET name = ?, equipment = ?, length = ?, instructions = ?, author = ?, image = ? WHERE id = ?");
-                $stmt->bindParam(1, $name);
-                $stmt->bindParam(2, $equipment);
-                $stmt->bindParam(3, $length);
-                $stmt->bindParam(4, $instructions);
-                $stmt->bindParam(5, $username); // Set author to the current username
-                $stmt->bindParam(6, $image, PDO::PARAM_LOB);
-                $stmt->bindParam(7, $training_id);
-            } else {
-                $stmt = $pdo->prepare("UPDATE table_trainings SET name = ?, equipment = ?, length = ?, instructions = ?, author = ? WHERE id = ?");
-                $stmt->bindParam(1, $name);
-                $stmt->bindParam(2, $equipment);
-                $stmt->bindParam(3, $length);
-                $stmt->bindParam(4, $instructions);
-                $stmt->bindParam(5, $username); // Set author to the current username
-                $stmt->bindParam(6, $training_id);
-            }
-
-            $stmt->execute();
+    } elseif (isset($_POST['training_id'])) {
+        $trainingId = $_POST['training_id'];
+        if ($trainings->isOwnerOrAdmin($trainingId, $userId, $isAdmin)) {
+            $data = [
+                'name' => $_POST['name'],
+                'equipment' => $_POST['equipment'],
+                'length' => $_POST['length'],
+                'instructions' => $_POST['instructions'],
+                'image' => isset($_FILES['image']) && $_FILES['image']['error'] == UPLOAD_ERR_OK ? file_get_contents($_FILES['image']['tmp_name']) : null
+            ];
+            $trainings->updateTraining($data, $username, $trainingId);
             header("Location: trainings.php?page=$page");
             exit;
         } else {
             echo "You are not authorized to update this training.";
         }
-    } else if (isset($_POST['name'])) {
-        // Create new training
-        $name = $_POST['name'];
-        $equipment = $_POST['equipment'];
-        $length = $_POST['length'];
-        $instructions = $_POST['instructions'];
-
-        $image = null;
-        if (isset($_FILES['image']) && $_FILES['image']['error'] == UPLOAD_ERR_OK) {
-            $image = file_get_contents($_FILES['image']['tmp_name']);
-        }
-
-        $stmt = $pdo->prepare("INSERT INTO table_trainings (name, equipment, length, instructions, author, image, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bindParam(1, $name);
-        $stmt->bindParam(2, $equipment);
-        $stmt->bindParam(3, $length);
-        $stmt->bindParam(4, $instructions);
-        $stmt->bindParam(5, $username); // Set author to the current username
-        $stmt->bindParam(6, $image, PDO::PARAM_LOB);
-        $stmt->bindParam(7, $userId);  // Ensure user_id is set
-        $stmt->execute();
+    } else {
+        $data = [
+            'name' => $_POST['name'],
+            'equipment' => $_POST['equipment'],
+            'length' => $_POST['length'],
+            'instructions' => $_POST['instructions'],
+            'image' => isset($_FILES['image']) && $_FILES['image']['error'] == UPLOAD_ERR_OK ? file_get_contents($_FILES['image']['tmp_name']) : null
+        ];
+        $trainings->createTraining($data, $username, $userId);
     }
 }
 
 // Fetch trainings for slideshow
-$stmt = $pdo->prepare("SELECT * FROM table_trainings LIMIT ? OFFSET ?");
-$stmt->bindParam(1, $limit, PDO::PARAM_INT);
-$stmt->bindParam(2, $offset, PDO::PARAM_INT);
-$stmt->execute();
-$trainings = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Fetch total number of trainings for pagination
-$totalTrainings = $pdo->query("SELECT COUNT(*) FROM table_trainings")->fetchColumn();
-$totalPages = ceil($totalTrainings / $limit);
+$trainingsList = $trainings->getTrainings($page);
+$totalPages = $trainings->getTotalPages();
 
 $editTraining = null;
 if (isset($_GET['edit_id'])) {
-    $stmt = $pdo->prepare("SELECT * FROM table_trainings WHERE id = ?");
-    $stmt->bindParam(1, $_GET['edit_id']);
-    $stmt->execute();
-    $editTraining = $stmt->fetch(PDO::FETCH_ASSOC);
+    $editTraining = $trainings->getTrainingById($_GET['edit_id']);
 }
 ?>
 
@@ -148,7 +81,7 @@ if (isset($_GET['edit_id'])) {
                 <a href="?page=<?= $page - 1 ?>" class="carousel-button prev-button">&#10094;</a>
             <?php endif; ?>
             <div class="carousel">
-                <?php foreach ($trainings as $training): ?>
+                <?php foreach ($trainingsList as $training): ?>
                     <div class="carousel-item">
                         <a href="?edit_id=<?= $training['id'] ?>&page=<?= $page ?>">
                             <img src="data:image/jpeg;base64,<?= base64_encode($training['image']) ?>" alt="<?= $training['name'] ?>">
